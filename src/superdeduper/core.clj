@@ -28,8 +28,8 @@
   (reduce
    (fn [acc [file checksum]]
      (if (get acc checksum)
-       (update acc checksum #(conj % file))
-       (assoc acc checksum (list file))))
+       (update acc checksum #(conj % (.getAbsolutePath file)))
+       (assoc acc checksum (list (.getAbsolutePath file)))))
    {}
    checksums))
 
@@ -44,6 +44,11 @@
   [x]
   (clojure.string/join (repeat 70 x)))
 
+(defn store-report
+  [file-map output-location]
+  (spit output-location (prn-str file-map))
+  file-map)
+
 (defn display-report
   [file-map]
   (println (banner "*"))
@@ -51,16 +56,17 @@
     (println (str "  <" checksum ">"))
     (println (banner "="))
     (doseq [f files]
-      (println (.getAbsolutePath f)))
+      (println f))
     (println (banner "~"))))
 
 (defn -main
   [& args]
-  (display-report
-   (-> args
-        (first)
-        (list-files)
-        (find-files)
-        (checksum-files)
-        (group-by-checksum)
-        (remove-snowflakes))))
+  (-> args
+      (first)
+      (list-files)
+      (find-files)
+      (checksum-files)
+      (group-by-checksum)
+      (remove-snowflakes)
+      (store-report "report.edn")
+      (display-report)))
