@@ -1,6 +1,6 @@
 (ns superdeduper.core-test
   (:require [clojure.test :refer :all]
-            [superdeduper.core :refer [list-files find-files checksum-files]]))
+            [superdeduper.core :refer [list-files find-files checksum-files group-by-checksum]]))
 
 (def license-checksum
   "be3a4413df84d4739c6caed110e9351cafc60dacc845b7a8779ff4feaef05e0d")
@@ -15,21 +15,27 @@
 
 (deftest files-only
   (testing "Should only list files in this directory."
-    (is (= (list "core_test.clj"))
-        (map #(.getName %) (find-files (list-files "test/superdeduper"))))))
+    (is (= (list "core_test.clj")
+           (map #(.getName %) (find-files (list-files "test/superdeduper")))))))
 
 (deftest checksum
   (testing "Should checksum the license file."
-    (is (= license-checksum
-           (first (keys (first
-            (checksum-files (find-files (list-files "LICENSE")) {}))))))))
+    (let [fs (checksum-files (find-files (list-files "LICENSE")))]
+      (is (= #{license-checksum}
+             (into #{}
+              (map
+               (fn [[k v]]
+                 v)
+               fs))
+             )))))
 
 (deftest find-duplicates
   (testing "Should find two files with the same checksum."
     (let [filemap (-> "dev-resources"
                       (list-files)
                       (find-files)
-                      (checksum-files))]
+                      (checksum-files)
+                      (group-by-checksum))]
           (is (= 1 (count filemap)))
           (is (= 2 (count (get filemap test-checksum))))
       )))

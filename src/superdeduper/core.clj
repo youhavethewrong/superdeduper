@@ -11,16 +11,14 @@
   "Finds file-like structures that are not hidden according to the underlying OS."
   [dirlist]
   (filter #(and (.isFile %)
-                (not (.isHidden %))) dirlist))
+                (not (.isHidden %)))
+          dirlist))
 
 (defn checksum-files
   [filelist]
   (map
    (fn [file]
-     (let [checksum (try
-                      (sha-256 file)
-                      (catch Exception e #((println e) "Error")))]
-       [file checksum]))
+     [file (sha-256 file)])
    filelist))
 
 (defn group-by-checksum
